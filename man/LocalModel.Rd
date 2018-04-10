@@ -10,7 +10,8 @@
 \section{Usage}{
 
 \preformatted{
-lime = LocalModel$new(predictor, x.interest = NULL, k = 3 run = TRUE)
+lime = LocalModel$new(predictor, x.interest = NULL, dist.fun = "gower",  
+                      kernel.width = NULL, k = 3 run = TRUE)
 
 plot(lime)
 predict(lime, newdata)
@@ -25,10 +26,15 @@ print(lime)
 
 For LocalModel$new():
 \describe{
-\item{predictor}{Object of type \code{Predictor}. See \link{Predictor}.}
-\item{x.interest}{data.frame with a single row for the instance to be explained.}
-\item{k}{the (maximum) number of features to be used for the surrogate model.}
-\item{run}{logical. Should the Interpretation method be run?}
+\item{predictor: }{(Predictor)\cr 
+The object (created with Predictor$new()) holding the machine learning model and the data.}
+\item{x.interest: }{(data.frame)\cr Single row with the instance to be explained.}
+\item{dist.fun: }{(`character(1)`)\cr The name of the distance function for computing proximities (weights in the linear model). Defaults to "gower". Otherwise will be forwarded to [stats::dist].}
+\item{kernel.width: }{(`numeric(1)`)\cr The width of the kernel for the proximity computation. Only used if dist.fun is not 'gower'.}
+\item{k: }{(`numeric(1)`)\cr
+The (maximum) number of features to be used for the surrogate model.}
+\item{run: }{(`logical(1)`)\cr
+Should the Interpretation method be run?}
 }
 }
 
@@ -43,7 +49,7 @@ To learn more about local models, read the Interpretable Machine Learning book: 
 
 The approach is similar to LIME, but has the following differences:
 \itemize{
-\item Distance measure: Uses gower proximity (= 1 - gower distance) instead of a kernel based on the Euclidean distance. Has the advantage to have a meaningful neighbourhood and no kernel width to tune.
+\item Distance measure: Uses as default the gower proximity (= 1 - gower distance) instead of a kernel based on the Euclidean distance. Has the advantage to have a meaningful neighbourhood and no kernel width to tune.
 \item Sampling: Uses the original data instead of sampling from normal distributions. 
 Has the advantage to follow the original data distribution. 
 \item Visualisation: Plots effects instead of betas. Both are the same for binary features, but ared different for numerical features. 
@@ -55,12 +61,12 @@ because a negative beta might still increase the prediction when the feature val
 \section{Fields}{
 
 \describe{
-\item{best.fit.index}{The index of the best glmnet fit.}
-\item{k}{The number of features as set by the user.}
-\item{model}{The glmnet object.}
-\item{predictor}{The prediction model that was analysed.}
-\item{results}{data.frame with the feature names (\code{feature}) and contributions to the prediction}
-\item{x.interest}{The data.frame with the instance to be explained. See Examples for usage.}
+\item{best.fit.index: }{(`numeric(1)`)\cr The index of the best glmnet fit.}
+\item{k: }{(`numeric(1)`)\cr The number of features as set by the user.}
+\item{model: }{(glmnet)\cr The fitted local model.}
+\item{predictor: }{(Predictor)\cr The prediction model that was analysed.}
+\item{results: }{(data.frame)\cr Results with the feature names (\code{feature}) and contributions to the prediction}
+\item{x.interest: }{(data.frame)\cr The instance to be explained. See Examples for usage.}
 }
 }
 

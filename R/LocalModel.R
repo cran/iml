@@ -7,7 +7,8 @@
 #' @name LocalModel
 #' @section Usage:
 #' \preformatted{
-#' lime = LocalModel$new(predictor, x.interest = NULL, k = 3 run = TRUE)
+#' lime = LocalModel$new(predictor, x.interest = NULL, dist.fun = "gower",  
+#'                       kernel.width = NULL, k = 3 run = TRUE)
 #' 
 #' plot(lime)
 #' predict(lime, newdata)
@@ -20,10 +21,15 @@
 #' 
 #' For LocalModel$new():
 #' \describe{
-#' \item{predictor}{Object of type \code{Predictor}. See \link{Predictor}.}
-#' \item{x.interest}{data.frame with a single row for the instance to be explained.}
-#' \item{k}{the (maximum) number of features to be used for the surrogate model.}
-#' \item{run}{logical. Should the Interpretation method be run?}
+#' \item{predictor: }{(Predictor)\cr 
+#' The object (created with Predictor$new()) holding the machine learning model and the data.}
+#' \item{x.interest: }{(data.frame)\cr Single row with the instance to be explained.}
+#' \item{dist.fun: }{(`character(1)`)\cr The name of the distance function for computing proximities (weights in the linear model). Defaults to "gower". Otherwise will be forwarded to [stats::dist].}
+#' \item{kernel.width: }{(`numeric(1)`)\cr The width of the kernel for the proximity computation. Only used if dist.fun is not 'gower'.}
+#' \item{k: }{(`numeric(1)`)\cr
+#' The (maximum) number of features to be used for the surrogate model.}
+#' \item{run: }{(`logical(1)`)\cr
+#' Should the Interpretation method be run?}
 #' }
 #' 
 #' @section Details: 
@@ -36,7 +42,7 @@
 #'
 #' The approach is similar to LIME, but has the following differences:
 #' \itemize{
-#' \item Distance measure: Uses gower proximity (= 1 - gower distance) instead of a kernel based on the Euclidean distance. Has the advantage to have a meaningful neighbourhood and no kernel width to tune.
+#' \item Distance measure: Uses as default the gower proximity (= 1 - gower distance) instead of a kernel based on the Euclidean distance. Has the advantage to have a meaningful neighbourhood and no kernel width to tune.
 #' \item Sampling: Uses the original data instead of sampling from normal distributions. 
 #' Has the advantage to follow the original data distribution. 
 #' \item Visualisation: Plots effects instead of betas. Both are the same for binary features, but ared different for numerical features. 
@@ -46,12 +52,12 @@
 #' 
 #' @section Fields:
 #' \describe{
-#' \item{best.fit.index}{The index of the best glmnet fit.}
-#' \item{k}{The number of features as set by the user.}
-#' \item{model}{The glmnet object.}
-#' \item{predictor}{The prediction model that was analysed.}
-#' \item{results}{data.frame with the feature names (\code{feature}) and contributions to the prediction}
-#' \item{x.interest}{The data.frame with the instance to be explained. See Examples for usage.}
+#' \item{best.fit.index: }{(`numeric(1)`)\cr The index of the best glmnet fit.}
+#' \item{k: }{(`numeric(1)`)\cr The number of features as set by the user.}
+#' \item{model: }{(glmnet)\cr The fitted local model.}
+#' \item{predictor: }{(Predictor)\cr The prediction model that was analysed.}
+#' \item{results: }{(data.frame)\cr Results with the feature names (\code{feature}) and contributions to the prediction}
+#' \item{x.interest: }{(data.frame)\cr The instance to be explained. See Examples for usage.}
 #' }
 #' 
 #' @section Methods:
@@ -78,6 +84,7 @@
 #' \code{\link[lime]{lime}}, the original implementation
 #' @export
 #' @importFrom glmnet glmnet
+#' @importFrom stats dist
 #' @examples 
 #' if (require("randomForest")) {
 #' # First we fit a machine learning model on the Boston housing data
@@ -130,14 +137,12 @@ LocalModel = R6::R6Class("LocalModel",
       X.recode = recode(newdata, self$x.interest)
       if (private$multiClass) {
         prediction = predict(self$model, newx=as.matrix(X.recode), type = "response")
+        prediction = data.frame(prediction[,,self$best.fit.index])
         colnames(prediction) = colnames(private$predictResults)
+        prediction
       } else {
-        prediction = predict(self$model, newx=as.matrix(X.recode))
-      }
-      if (private$multiClass) {
-        data.frame(prediction[,,self$best.fit.index])
-      } else {
-        pred = prediction[,self$best.fit.index, drop=FALSE]
+        prediction = predict(self$model, newx = as.matrix(X.recode))
+        pred = prediction[,self$best.fit.index, drop = FALSE]
         colnames(pred) = NULL
         data.frame(prediction = pred)
       }
@@ -147,9 +152,11 @@ LocalModel = R6::R6Class("LocalModel",
       private$flush()
       self$run()
     },
-    initialize = function(predictor, x.interest = NULL, k = 3, run = TRUE) {
-      checkmate::assert_number(k, lower = 1, upper = predictor$data$n.features)
-      checkmate::assert_data_frame(x.interest, null.ok = TRUE)
+    initialize = function(predictor, x.interest = NULL, dist.fun = "gower", kernel.width = NULL, k = 3, run = TRUE) {
+      assert_number(k, lower = 1, upper = predictor$data$n.features)
+      assert_data_frame(x.interest, null.ok = TRUE)
+      assert_choice(dist.fun, c("gower", "euclidean", "maximum", 
+        "manhattan", "canberra", "binary", "minkowski"))
       if (!require("glmnet")) {
         stop("Please install glmnet.")
       }
@@ -158,6 +165,8 @@ LocalModel = R6::R6Class("LocalModel",
       if (!is.null(x.interest)) {
         self$x.interest = x.interest
       }
+      private$weight.fun = private$get.weight.fun(dist.fun, kernel.width)
+      
       if (run & !is.null(x.interest)) self$run()
     }
   ),
@@ -169,9 +178,9 @@ LocalModel = R6::R6Class("LocalModel",
       x.recoded = recode(self$x.interest, self$x.interest)
       fam = ifelse(private$multiClass, "multinomial", "gaussian")
       y = unlist(private$qResults[1])
-      self$model = glmnet(x = as.matrix(X.recode), y = y, 
-        family = fam, w = private$weightSamples(), 
-        intercept = TRUE, standardize = TRUE, type.multinomial = "grouped")
+      w = private$weight.fun(X.recode, x.recoded)
+      self$model = glmnet(x = as.matrix(X.recode), y = y, family = fam, 
+        w = w,  intercept = TRUE, standardize = TRUE, type.multinomial = "grouped")
       res = self$model
       ## It can happen, that no n.vars matching k occurs
       if (any(res$df == self$k)) {
@@ -194,18 +203,27 @@ LocalModel = R6::R6Class("LocalModel",
     intervene = function() private$dataSample, 
     generatePlot = function() {
       p = ggplot(self$results) + 
-        geom_col(aes(y = effect, x=feature.value)) + coord_flip()
+        geom_col(aes(y = effect, x = feature.value)) + coord_flip()
       if (private$multiClass) p = p + facet_wrap("..class")
       p
     },
-    weightSamples = function() {
-      require("gower")
-      1 - gower_dist(private$dataDesign, self$x.interest)
-    }
+    get.weight.fun = function(dist.fun, kernel.width) {
+      if (dist.fun == "gower") {
+        require("gower")
+        function(X, x.interest) {
+          1 - gower_dist(X, x.interest)
+        }
+      } else {
+        assert_numeric(kernel.width)
+        function(X, x.interest) {
+          d = dist(rbind(x.interest, X), method = dist.fun)[1+1:nrow(X)]
+          sqrt(exp(-(d^2) / (kernel.width^2)))
+        }
+      }
+    },
+    weight.fun = NULL
   )
 )
-
-
 
 #' Predict LocalModel
 #' 

@@ -20,10 +20,11 @@
 #' 
 #' For FeatureImp$new():
 #' \describe{
-#' \item{predictor}{Object of type \code{Predictor}. See \link{Predictor}.}
-#' \item{run}{logical. Should the Interpretation method be run?}
-#' \item{loss}{The loss function. A string (e.g. "ce" for classification or "mse") or a function. See Details for allowed losses.}
-#' \item{method}{Either "shuffle" or "cartesian". See Details.}
+#' \item{predictor: }{(Predictor)\cr 
+#' The object (created with Predictor$new()) holding the machine learning model and the data.}
+#' \item{loss: }{(`character(1)` | function)\cr The loss function. Either the name of a loss (e.g. "ce" for classification or "mse") or a loss function. See Details for allowed losses.}
+#' \item{method: }{(`character(1)`)\cr Either "shuffle" or "cartesian". See Details.}
+#' \item{run: }{(`logical(1)`)\cr Should the Interpretation method be run?}
 #' }
 #' 
 #' @section Details:
@@ -47,9 +48,9 @@
 #' 
 #' @section Fields:
 #' \describe{
-#' \item{original.error}{The loss of the model before perturbing features.}
-#' \item{predictor}{The prediction model that was analysed.}
-#' \item{results}{data.frame with the results of the feature importance computation.}
+#' \item{original.error: }{(`numeric(1)`)\cr The loss of the model before perturbing features.}
+#' \item{predictor: }{(Predictor)\cr The prediction model that was analysed.}
+#' \item{results: }{(data.frame)\cr data.frame with the results of the feature importance computation.}
 #' }
 #' 
 #' @section Methods:
@@ -65,6 +66,7 @@
 #' Fisher, A., Rudin, C., and Dominici, F. (2018). Model Class Reliance: Variable Importance Measures for any Machine Learning Model Class, from the "Rashomon" Perspective. Retrieved from http://arxiv.org/abs/1801.01489
 #' 
 #' @import Metrics
+#' @importFrom data.table copy rbindlist
 #' @examples
 #' if (require("rpart")) {
 #' # We train a tree on the Boston dataset:
@@ -121,7 +123,6 @@ FeatureImp = R6::R6Class("FeatureImp",
     original.error = NULL,
     initialize = function(predictor, loss, method = "shuffle", run = TRUE) {
       assert_choice(method, c("shuffle", "cartesian"))
-      
       if (!inherits(loss, "function")) {
         ## Only allow metrics from Metrics package
         allowedLosses = c("ce", "f1", "logLoss", "mae", "mse", "rmse", "mape", "mdae", 
@@ -152,8 +153,9 @@ FeatureImp = R6::R6Class("FeatureImp",
     loss.string = NULL,
     shuffleFeature = function(feature.name, method) {
       if (method == "shuffle") {
-        X.inter = private$dataSample
-        X.inter[feature.name] = X.inter[sample(1:nrow(private$dataSample)), feature.name]
+        X.inter = copy(private$dataSample)
+        sampled.features = sample(X.inter[[feature.name]])
+        X.inter[, (feature.name) := sampled.features]
       } else if (method == "cartesian") {
         n = nrow(private$dataSample)
         row.indices = rep(1:n, times = n)
@@ -161,8 +163,10 @@ FeatureImp = R6::R6Class("FeatureImp",
         # Indices of instances to keep. Removes those where instance matched with own value
         keep.indices = row.indices != replace.indices
         X.inter = private$dataSample[row.indices, ]
-        X.inter[feature.name] = X.inter[replace.indices, feature.name]
+        shuffled.features =  X.inter[replace.indices, feature.name, with = FALSE][[1]]
+        X.inter[, (feature.name) :=  shuffled.features] 
         X.inter = X.inter[keep.indices,]
+        X.inter
       } else {
         stop(sprintf("%s method not implemented"))
       }
@@ -173,18 +177,17 @@ FeatureImp = R6::R6Class("FeatureImp",
     intervene = function() {
       X.inter.list = lapply(private$sampler$feature.names, 
         function(i) private$shuffleFeature(i, method = private$method))
-      data.frame(data.table::rbindlist(X.inter.list))
+      rbindlist(X.inter.list)
     },
     aggregate = function() {
-      y = private$dataDesign[private$sampler$y.names]
+      y = private$dataDesign[, private$sampler$y.names, with = FALSE]
       y.hat = private$qResults
       # For classification we work with the class labels instead of probs
-      result = data.frame(feature = private$dataDesign$..feature, actual = y[[1]], 
+      result = data.table(feature = private$dataDesign$..feature, actual = y[[1]], 
         predicted = y.hat[[1]])
-      
-      result.grouped  = group_by_(result, "feature")
-      result = summarise(result.grouped, original.error = self$original.error, permutation.error = self$loss(actual, predicted), 
-        importance = permutation.error / self$original.error)
+      result = result[, list("original.error" = self$original.error, 
+        "permutation.error" = self$loss(actual, predicted)), by = feature]
+      result[, importance := permutation.error / self$original.error]
       result = result[order(result$importance, decreasing = TRUE),]
       result
     },
@@ -217,7 +220,6 @@ FeatureImp = R6::R6Class("FeatureImp",
 #' @param ... Further arguments for the objects plot function
 #' @return ggplot2 plot object
 #' @export
-#' @importFrom dplyr group_by_
 #' @seealso 
 #' \link{FeatureImp}
 #' @examples  

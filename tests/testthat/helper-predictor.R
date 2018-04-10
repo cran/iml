@@ -1,7 +1,8 @@
 
 f = function(newdata, multi = FALSE) {
-  pred = unlist(newdata[1] + newdata[2] + 100 * (newdata[3] == "a")) / (155)
+  pred = unlist(newdata[, 1] + newdata[, 2] + 100 * (newdata[3] == "a")) / (155)
   dat = data.frame(pred = pred)
+  colnames(dat) = "pred"
   if (multi) dat$pred2 = 1 - dat$pred
   dat
 }
@@ -19,3 +20,11 @@ predictor1 = Predictor$new(data = X, y = y, predict.fun = f)
 predict.fun = function(obj, newdata) obj(newdata, multi = TRUE)
 predictor2 = Predictor$new(f, data = X, y = y2, predict.fun = predict.fun)
 predictor3 = Predictor$new(f, data = X, predict.fun = predict.fun, class = 2)
+
+
+
+checkPlot = function(obj) { 
+  p = plot(obj)
+  expect_s3_class(p, c("gg", "ggplot"))
+  plot(p)
+}
