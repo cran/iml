@@ -34,8 +34,11 @@
 #' \describe{
 #' \item{maxdepth: }{(`numeric(1)`)\cr The maximum tree depth.}
 #' \item{predictor: }{(Predictor)\cr The prediction model that was analysed.}
-#' \item{results: }{(data.frame)\cr Data.frame with sampled feature X together with the leaf node information (columns ..node and ..path) 
-#' and the predicted \eqn{\hat{y}} for tree and machine learning model (columns starting with ..y.hat).}
+#' \item{r.squared}{(`numeric(1|n.classes)`)\cr R squared measures how well the decision tree approximates the underlying model. 
+#' It is calculated as 1 - (variance of prediction differences / variance of black box model predictions).
+#' For the multi-class case, r.squared contains one measure per class.}
+#' \item{results: }{(data.frame)\cr Data.frame with sampled feature X together with the leaf node information (columns .node and .path) 
+#' and the predicted \eqn{\hat{y}} for tree and machine learning model (columns starting with .y.hat).}
 #' \item{tree: }{(party)\cr The fitted tree. See also \link[partykit]{ctree}.}
 #' }
 #'  
@@ -115,6 +118,7 @@ TreeSurrogate = R6::R6Class("TreeSurrogate",
     tree = NULL,
     # Maximal depth as set by the user
     maxdepth = NULL,
+    r.squared = NULL,
     initialize = function(predictor, maxdepth = 2, tree.args = NULL, run = TRUE) {
       super$initialize(predictor)
       private$tree.args = tree.args
@@ -126,10 +130,10 @@ TreeSurrogate = R6::R6Class("TreeSurrogate",
       res = data.frame(predict(self$tree, newdata = newdata, type = "response", ...))
       if (private$multiClass) {
         if (type == "class") {
-          res = data.frame(..class = colnames(res)[apply(res, 1, which.max)])
+          res = data.frame(.class = colnames(res)[apply(res, 1, which.max)])
         }
       } else {
-        res = data.frame(..y.hat = predict(self$tree, newdata = newdata, ...))
+        res = data.frame(.y.hat = predict(self$tree, newdata = newdata, ...))
       }
       res
     }
@@ -140,7 +144,6 @@ TreeSurrogate = R6::R6Class("TreeSurrogate",
     tree.predict.colnames = NULL,
     # Only relevant in multiClass case
     object.predict.colnames = NULL,
-
     intervene = function() private$dataSample,
     aggregate = function() {
       y.hat = private$qResults
@@ -154,23 +157,24 @@ TreeSurrogate = R6::R6Class("TreeSurrogate",
       dat = cbind(y.hat, private$dataDesign)
       tree.args = c(list(formula = form, data = dat, maxdepth = self$maxdepth), private$tree.args)
       self$tree = do.call(partykit::ctree, tree.args)
-      result = data.frame(..node = predict(self$tree, type = "node"), 
-        ..path = pathpred(self$tree))
+      result = data.frame(.node = predict(self$tree, type = "node"), 
+        .path = pathpred(self$tree))
       if (private$multiClass) {
         outcome = private$qResults
-        colnames(outcome) = paste("..y.hat.", colnames(outcome), sep="")
+        colnames(outcome) = paste(".y.hat.", colnames(outcome), sep="")
         private$object.predict.colnames = colnames(outcome)
         
-        # result = gather(result, key = "..class", value = "..y.hat", one_of(cnames))
-        ..y.hat.tree = self$predict(private$dataDesign, type = "prob")
-        colnames(..y.hat.tree) = paste("..y.hat.tree.", colnames(..y.hat.tree), sep="")
-        private$tree.predict.colnames = colnames(..y.hat.tree)
-        
-        #..y.hat.tree = gather(..y.hat.tree, "..class.tree", "..y.hat.tree")
-        result = cbind(result, outcome, ..y.hat.tree)
+        # result = gather(result, key = ".class", value = ".y.hat", one_of(cnames))
+        .y.hat.tree = self$predict(private$dataDesign, type = "prob")
+        colnames(.y.hat.tree) = paste(".y.hat.tree.", colnames(.y.hat.tree), sep="")
+        private$tree.predict.colnames = colnames(.y.hat.tree)
+        self$r.squared = private$compute.r.squared(.y.hat.tree, outcome)
+        #.y.hat.tree = gather(.y.hat.tree, ".class.tree", ".y.hat.tree")
+        result = cbind(result, outcome, .y.hat.tree)
       } else {
-        result$..y.hat = private$qResults[[1]]
-        result$..y.hat.tree = self$predict(private$dataDesign)[[1]]
+        result$.y.hat = private$qResults[[1]]
+        result$.y.hat.tree = self$predict(private$dataDesign)[[1]]
+        self$r.squared = private$compute.r.squared(result$.y.hat.tree, result$.y.hat)
       }
       design = private$dataDesign
       rownames(design) = NULL
@@ -178,21 +182,34 @@ TreeSurrogate = R6::R6Class("TreeSurrogate",
     }, 
     generatePlot = function() {
       p = ggplot(self$results) + 
-        geom_boxplot(aes(y = ..y.hat, x = "")) + 
+        geom_boxplot(aes(y = .y.hat, x = "")) + 
         scale_x_discrete("") + 
-        facet_wrap("..path") + 
+        facet_wrap(".path") + 
         scale_y_continuous(expression(hat(y)))
       if (private$multiClass) {
         plotData = self$results
         # max class for model
-        plotData$..class = private$object.predict.colnames[apply(plotData[private$object.predict.colnames], 1, which.max)]
-        plotData$..class = gsub("..y.hat.", "", plotData$..class)
+        plotData$.class = private$object.predict.colnames[apply(plotData[private$object.predict.colnames], 1, which.max)]
+        plotData$.class = gsub(".y.hat.", "", plotData$.class)
         plotData = plotData[setdiff(names(plotData), private$object.predict.colnames)]
         p = ggplot(plotData) + 
-          geom_bar(aes(x = ..class)) + 
-          facet_wrap("..path")
+          geom_bar(aes(x = .class)) + 
+          facet_wrap(".path")
       }
       p
+    }, 
+    compute.r.squared = function(predict.tree, predict.model) {
+      r.squared = function(pred.tree, pred.mod) {
+        SST = var(pred.mod)
+        SSE = var(pred.tree - pred.mod)
+        1 - SSE/SST
+      }
+      if (private$multiClass) {
+       sapply(1:ncol(predict.tree), function(ind) r.squared(predict.tree[ind], predict.model[ind]))
+      } else {
+        r.squared(predict.tree, predict.model)
+      }
+      
     }
   )
 )
