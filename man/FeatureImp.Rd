@@ -11,7 +11,7 @@ The importance is measured as the factor by which the model's prediction error i
 \section{Usage}{
 
 \preformatted{
-imp = FeatureImp$new(predictor, loss, method = "shuffle", run = TRUE)
+imp = FeatureImp$new(predictor, loss, method = "shuffle", n.repetitions = 3, run = TRUE)
 
 plot(imp)
 imp$results
@@ -27,7 +27,10 @@ For FeatureImp$new():
 \item{predictor: }{(Predictor)\cr 
 The object (created with Predictor$new()) holding the machine learning model and the data.}
 \item{loss: }{(`character(1)` | function)\cr The loss function. Either the name of a loss (e.g. "ce" for classification or "mse") or a loss function. See Details for allowed losses.}
-\item{method: }{(`character(1)`)\cr Either "shuffle" or "cartesian". See Details.}
+\item{method: }{(`character(1)`\cr Either "shuffle" or "cartesian". See Details.}
+\item{n.repetitions: }{`numeric(1)`\cr How often should the shuffling of the feature be repeated? Ignored if method is set to "cartesian".
+The higher the number of repetitions the more stable the results will become.}
+\item{parallel: }{`logical(1)`\cr Should the method be executed in parallel? If TRUE, requires a cluster to be registered, see ?foreach::foreach.}
 \item{run: }{(`logical(1)`)\cr Should the Interpretation method be run?}
 }
 }
@@ -46,8 +49,8 @@ Two permutation schemes are implemented:
 The loss function can be either specified via a string, or by handing a function to \code{FeatureImp()}.
 If you want to use your own loss function it should have this signature: function(actual, predicted).
 Using the string is a shortcut to using loss functions from the \code{Metrics} package. 
-Only use functions that return a single performance value, not a vector. 
-Allowed losses are: "ce", "f1", "logLoss", "mae", "mse", "rmse", "mape", "mdae", 
+Only use functions that return a single performance value, not a vector.
+Allowed losses are: "ce", "f1", "logLoss", "mae", "mse", "rmse", "mape", "mdae",
 "msle", "percent_bias", "rae", "rmse", "rmsle", "rse", "rrse", "smape"
 See \code{library(help = "Metrics")} to get a list of functions.
 }
@@ -81,6 +84,7 @@ y = Boston$medv
 X = Boston[-which(names(Boston) == "medv")]
 mod = Predictor$new(tree, data = X, y = y)
 
+
 # Compute feature importances as the performance drop in mean absolute error
 imp = FeatureImp$new(mod, loss = "mae")
 
@@ -103,8 +107,7 @@ if (require("ggplot2")) {
 tree = rpart(Species ~ ., data= iris)
 X = iris[-which(names(iris) == "Species")]
 y = iris$Species
-predict.fun = function(object, newdata) predict(object, newdata, type = "prob")
-mod = Predictor$new(tree, data = X, y = y, predict.fun) 
+mod = Predictor$new(tree, data = X, y = y, type = "prob") 
 
 # For some models we have to specify additional arguments for the predict function
 imp = FeatureImp$new(mod, loss = "ce")
@@ -113,7 +116,7 @@ plot(imp)
 # For multiclass classification models, you can choose to only compute performance for one class. 
 # Make sure to adapt y
 mod = Predictor$new(tree, data = X, y = y == "virginica", 
-  predict.fun = predict.fun, class = "virginica") 
+ type = "prob", class = "virginica") 
 imp = FeatureImp$new(mod, loss = "ce")
 plot(imp)
 }

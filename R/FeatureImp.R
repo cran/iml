@@ -9,7 +9,7 @@
 #' 
 #' @section Usage:
 #' \preformatted{
-#' imp = FeatureImp$new(predictor, loss, method = "shuffle", run = TRUE)
+#' imp = FeatureImp$new(predictor, loss, method = "shuffle", n.repetitions = 3, run = TRUE)
 #' 
 #' plot(imp)
 #' imp$results
@@ -23,7 +23,10 @@
 #' \item{predictor: }{(Predictor)\cr 
 #' The object (created with Predictor$new()) holding the machine learning model and the data.}
 #' \item{loss: }{(`character(1)` | function)\cr The loss function. Either the name of a loss (e.g. "ce" for classification or "mse") or a loss function. See Details for allowed losses.}
-#' \item{method: }{(`character(1)`)\cr Either "shuffle" or "cartesian". See Details.}
+#' \item{method: }{(`character(1)`\cr Either "shuffle" or "cartesian". See Details.}
+#' \item{n.repetitions: }{`numeric(1)`\cr How often should the shuffling of the feature be repeated? Ignored if method is set to "cartesian".
+#' The higher the number of repetitions the more stable the results will become.}
+#' \item{parallel: }{`logical(1)`\cr Should the method be executed in parallel? If TRUE, requires a cluster to be registered, see ?foreach::foreach.}
 #' \item{run: }{(`logical(1)`)\cr Should the Interpretation method be run?}
 #' }
 #' 
@@ -40,11 +43,10 @@
 #' The loss function can be either specified via a string, or by handing a function to \code{FeatureImp()}.
 #' If you want to use your own loss function it should have this signature: function(actual, predicted).
 #' Using the string is a shortcut to using loss functions from the \code{Metrics} package. 
-#' Only use functions that return a single performance value, not a vector. 
-#' Allowed losses are: "ce", "f1", "logLoss", "mae", "mse", "rmse", "mape", "mdae", 
+#' Only use functions that return a single performance value, not a vector.
+#' Allowed losses are: "ce", "f1", "logLoss", "mae", "mse", "rmse", "mape", "mdae",
 #' "msle", "percent_bias", "rae", "rmse", "rmsle", "rse", "rrse", "smape"
-#' See \code{library(help = "Metrics")} to get a list of functions. 
-#' 
+#' See \code{library(help = "Metrics")} to get a list of functions.
 #' 
 #' @section Fields:
 #' \describe{
@@ -66,6 +68,7 @@
 #' Fisher, A., Rudin, C., and Dominici, F. (2018). Model Class Reliance: Variable Importance Measures for any Machine Learning Model Class, from the "Rashomon" Perspective. Retrieved from http://arxiv.org/abs/1801.01489
 #' 
 #' @import Metrics
+#' @importFrom foreach %dopar% foreach %do%
 #' @importFrom data.table copy rbindlist
 #' @examples
 #' if (require("rpart")) {
@@ -75,6 +78,7 @@
 #' y = Boston$medv
 #' X = Boston[-which(names(Boston) == "medv")]
 #' mod = Predictor$new(tree, data = X, y = y)
+#' 
 #' 
 #' # Compute feature importances as the performance drop in mean absolute error
 #' imp = FeatureImp$new(mod, loss = "mae")
@@ -98,8 +102,7 @@
 #' tree = rpart(Species ~ ., data= iris)
 #' X = iris[-which(names(iris) == "Species")]
 #' y = iris$Species
-#' predict.fun = function(object, newdata) predict(object, newdata, type = "prob")
-#' mod = Predictor$new(tree, data = X, y = y, predict.fun) 
+#' mod = Predictor$new(tree, data = X, y = y, type = "prob") 
 #' 
 #' # For some models we have to specify additional arguments for the predict function
 #' imp = FeatureImp$new(mod, loss = "ce")
@@ -108,25 +111,33 @@
 #' # For multiclass classification models, you can choose to only compute performance for one class. 
 #' # Make sure to adapt y
 #' mod = Predictor$new(tree, data = X, y = y == "virginica", 
-#'   predict.fun = predict.fun, class = "virginica") 
+#'  type = "prob", class = "virginica") 
 #' imp = FeatureImp$new(mod, loss = "ce")
 #' plot(imp)
 #' }
 NULL
 
 #' @export
-
 FeatureImp = R6::R6Class("FeatureImp", 
   inherit = InterpretationMethod,
   public = list(
     loss = NULL,
     original.error = NULL,
-    initialize = function(predictor, loss, method = "shuffle", run = TRUE) {
+    n.repetitions = NULL,
+    initialize = function(predictor, loss, method = "shuffle", n.repetitions = 3, run = TRUE, parallel = FALSE) {
       assert_choice(method, c("shuffle", "cartesian"))
+      assert_number(n.repetitions)
+      assert_logical(parallel)
+      private$parallel = parallel
+      if (n.repetitions > predictor$data$n.rows) {
+        message('Number of repetitions larger than number of unique permutations per row. 
+          Switching to method = "cartesian"')
+        method = "cartesian"
+      }
       if (!inherits(loss, "function")) {
         ## Only allow metrics from Metrics package
-        allowedLosses = c("ce", "f1", "logLoss", "mae", "mse", "rmse", "mape", "mdae", 
-          "msle", "percent_bias", "rae", "rmse", "rmsle", "rse", "rrse", "smape")
+        allowedLosses = c("ce", "f1", "logLoss", "mae", "mse", "rmse", "mape", "mdae",
+                 "msle", "percent_bias", "rae", "rmse", "rmsle", "rse", "rrse", "smape")        
         checkmate::assert_choice(loss, allowedLosses)
         private$loss.string  = loss
         loss = getFromNamespace(loss, "Metrics")
@@ -140,11 +151,12 @@ FeatureImp = R6::R6Class("FeatureImp",
       self$loss = private$set.loss(loss)
       private$method = method
       private$getData = private$sampler$get.xy
+      self$n.repetitions = n.repetitions
       actual = private$sampler$y[[1]]
       predicted = private$q(self$predictor$predict(private$sampler$X))[[1]]
       # Assuring that levels are the same
       self$original.error = loss(actual, predicted)
-      if(run) self$run()
+      if(run) private$run(self$predictor$batch.size)
     }
   ),
   private = list(
@@ -152,27 +164,55 @@ FeatureImp = R6::R6Class("FeatureImp",
     # for printing
     loss.string = NULL,
     q = function(pred) probs.to.labels(pred),
-    intervene = function() {
-      X.inter.list = lapply(private$sampler$feature.names, 
-        function(i) {
-          n.times = ifelse(private$method == "cartesian", nrow(private$dataSample), 1)
-          mg = generate.marginals(private$dataSample, private$dataSample, features = i, n.sample.dist = n.times)
-          mg$.feature = i
-          mg
-        })
-      rbindlist(X.inter.list, use.names = TRUE)
+    combine.aggregations = function(agg, dat){
+      if(is.null(agg)) { 
+        return(dat) 
+      } else {
+        
+      }
     },
-    aggregate = function() {
-      y = private$dataDesign[, private$sampler$y.names, with = FALSE]
-      y.hat = private$qResults
-      # For classification we work with the class labels instead of probs
-      result = data.table(feature = private$dataDesign$.feature, actual = y[[1]], 
-        predicted = y.hat[[1]])
-      result = result[, list("original.error" = self$original.error, 
-        "permutation.error" = self$loss(actual, predicted)), by = feature]
+    run = function(n){
+      private$dataSample = private$getData()
+      result = NULL
+      
+      estimate.feature.imp = function(feature, data.sample, y, n.repetitions, cartesian, y.names, pred, loss) {
+        cartesian = ifelse(private$method == "cartesian", TRUE, FALSE)
+        mg = iml:::MarginalGenerator$new(data.sample, data.sample, 
+          features = feature, n.sample.dist = n.repetitions, y = y, cartesian = cartesian, id.dist = TRUE)
+        qResults = data.table::data.table()
+        y.vec = data.table::data.table()
+        while(!mg$finished) {
+          data.design = mg$next.batch(n, y = TRUE)
+          y.vec = rbind(y.vec, data.design[, y.names , with = FALSE])
+          qResults = rbind(qResults, pred(data.design))
+        }
+  
+        # AGGREGATE measurements
+        results = data.table::data.table(feature = feature, actual = y.vec[[1]], predicted = qResults[[1]])
+        results = results[, list("permutation.error" = loss(actual, predicted)), by = feature]
+        results
+      }
+      
+      loss = self$loss
+      n.repetitions = self$n.repetitions
+      data.sample = private$dataSample
+      y = private$sampler$y
+      y.names = private$sampler$y.names
+      pred  = private$run.prediction
+      loss = self$loss
+      
+      `%mypar%` = private$get.parallel.fct(private$parallel)
+      result = foreach(feature = private$sampler$feature.names, .combine = rbind, .export = "self", 
+        .packages = devtools::loaded_packages()$package, .inorder = FALSE) %mypar%
+        estimate.feature.imp(feature, data.sample = data.sample, y = y, cartesian = cartesian, 
+          n.repetitions = n.repetitions, y.names = y.names, pred  = pred, loss = loss)
+      result$original.error = self$original.error
       result[, importance := permutation.error / self$original.error]
       result = result[order(result$importance, decreasing = TRUE),]
-      result
+      # Removes the n column
+      result = result[,list(feature, original.error, permutation.error, importance)]
+      private$finished = TRUE
+      self$results = result
     },
     generatePlot = function(sort = TRUE, ...) {
       res = self$results
@@ -223,9 +263,6 @@ FeatureImp = R6::R6Class("FeatureImp",
 plot.FeatureImp = function(x, sort = TRUE, ...) {
   x$plot(sort = sort, ...)
 }
-
-
-
 
 
 
