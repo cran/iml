@@ -50,12 +50,17 @@ To learn more about local models, read the Interpretable Machine Learning book: 
 The approach is similar to LIME, but has the following differences:
 \itemize{
 \item Distance measure: Uses as default the gower proximity (= 1 - gower distance) instead of a kernel based on the Euclidean distance. Has the advantage to have a meaningful neighbourhood and no kernel width to tune.
+When the distance is not "gower", then the stats::dist() function with the chosen method will be used, 
+and turned into a similarity measure: sqrt(exp(-(distance^2) / (kernel.width^2))).
 \item Sampling: Uses the original data instead of sampling from normal distributions. 
 Has the advantage to follow the original data distribution. 
 \item Visualisation: Plots effects instead of betas. Both are the same for binary features, but ared different for numerical features. 
 For numerical features, plotting the betas makes no sense, 
 because a negative beta might still increase the prediction when the feature value is also negative.
 }
+
+To learn more about local surrogate models, read the Interpretable Machine Learning book: 
+\url{https://christophm.github.io/interpretable-ml-book/lime.html}
 }
 
 \section{Fields}{
@@ -127,5 +132,5 @@ Gower, J. C. (1971), "A general coefficient of similarity and some of its proper
 
 \code{\link{Shapley}} can also be used to explain single predictions
 
-\code{\link[lime]{lime}}, the original implementation
+The package `lime` with the original implementation
 }

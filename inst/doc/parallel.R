@@ -27,8 +27,8 @@ system.time(FeatureImp$new(predictor, loss = "mae", parallel = FALSE))
 system.time(FeatureImp$new(predictor, loss = "mae", parallel = TRUE))
 
 ## ------------------------------------------------------------------------
-system.time(FeatureImp$new(predictor, loss = "mae", parallel = FALSE, n.repetitions = 200))
-system.time(FeatureImp$new(predictor, loss = "mae", parallel = TRUE, n.repetitions = 200))
+system.time(FeatureImp$new(predictor, loss = "mae", parallel = FALSE, n.repetitions = 20))
+system.time(FeatureImp$new(predictor, loss = "mae", parallel = TRUE, n.repetitions = 20))
 
 ## ------------------------------------------------------------------------
 system.time(Interaction$new(predictor, parallel = FALSE))

@@ -9,6 +9,7 @@ test_that("FeatureImp works for single output", {
   var.imp = FeatureImp$new(predictor1, loss = "mse")
   dat = var.imp$results
   expect_class(dat, "data.frame")
+  expect_false("data.table" %in% class(dat))
   expect_equal(colnames(dat), expectedColnames)
   expect_equal(nrow(dat), ncol(X))  
   p = plot(var.imp)
@@ -96,4 +97,18 @@ test_that("Works for different repetitions.",{
   expect_class(dat, "data.frame")
 })
 
+
+test_that("Model receives data.frame without additional columns", {
+  # https://stackoverflow.com/questions/51980808/r-plotting-importance-feature-using-featureimpnew
+  library(mlr)
+  library(ranger)
+  data("iris")
+  tsk = mlr::makeClassifTask(data = iris, target = "Species")
+  lrn = mlr::makeLearner("classif.ranger",predict.type = "prob")
+  mod = mlr:::train(lrn, tsk)
+  X = iris[which(names(iris) != "Species")]
+  predictor = Predictor$new(mod, data = X, y = iris$Species)
+  imp = FeatureImp$new(predictor, loss = "ce")
+  expect_r6(imp)
+})
 
