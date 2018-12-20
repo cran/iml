@@ -98,7 +98,7 @@ pathpred = function(object, ...) {
 }
 
 
-is.label.output = function(pred) {
+is_label = function(pred) {
   if (inherits(pred, c("character", "factor"))) return(TRUE)
   if (inherits(pred, c("data.frame", "matrix")) && 
       inherits(pred[,1], "character") && ncol(pred) == 1) {
@@ -237,7 +237,7 @@ order_levels = function(dat, feature.name) {
     feature.x = dat[, x, with = FALSE][[1]]
     dists = expand.grid(levels(feature), levels(feature))
     colnames(dists) = c("from.level", "to.level")
-    if(class(feature.x) == "factor") {
+    if(inherits(feature.x,  "factor")) {
       A = table(feature, feature.x) / x.count
       dists$dist = rowSums(abs(A[dists[,"from.level"],] - A[dists[,"to.level"],]))/2
     } else {
@@ -258,4 +258,6 @@ order_levels = function(dat, feature.name) {
   scaled = cmdscale(dists.cumulated, k = 1)
   order(scaled)
 }
+
+
 

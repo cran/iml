@@ -137,8 +137,13 @@ LocalModel = R6::R6Class("LocalModel",
     model = NULL,
     best.fit.index = NULL,
     predict = function(newdata = NULL, ...) {
-      if (is.null(newdata)) newdata = self$x.interest
+      if (is.null(newdata)) {
+        newdata = self$x.interest
+      } else {
+        newdata = private$match_cols(newdata)
+      }
       X.recode = recode(newdata, self$x.interest)
+      
       if (private$multiClass) {
         prediction = predict(self$model, newx=as.matrix(X.recode), type = "response")
         prediction = data.frame(prediction[,,self$best.fit.index])
@@ -152,7 +157,7 @@ LocalModel = R6::R6Class("LocalModel",
       }
     },
     explain = function(x.interest) {
-      self$x.interest = x.interest
+      self$x.interest = private$match_cols(x.interest)
       private$flush()
       self$run()
     },
@@ -167,7 +172,7 @@ LocalModel = R6::R6Class("LocalModel",
       super$initialize(predictor = predictor)
       self$k = k
       if (!is.null(x.interest)) {
-        self$x.interest = x.interest
+        self$x.interest = private$match_cols(x.interest)
       }
       private$weight.fun = private$get.weight.fun(dist.fun, kernel.width)
       
@@ -177,6 +182,7 @@ LocalModel = R6::R6Class("LocalModel",
   private = list(
     q = function(pred) probs.to.labels(pred),
     best.index = NULL,
+    match_cols = function(newdata) self$predictor$data$match_cols(data.frame(newdata)),
     aggregate = function() {
       X.recode = recode(private$dataDesign, self$x.interest)
       x.recoded = recode(self$x.interest, self$x.interest)
@@ -207,7 +213,15 @@ LocalModel = R6::R6Class("LocalModel",
     intervene = function() private$dataSample, 
     generatePlot = function() {
       p = ggplot(self$results) + 
-        geom_col(aes(y = effect, x = reorder(feature.value,effect))) + coord_flip()
+        geom_col(aes(y = effect, x = reorder(feature.value,effect))) + 
+        coord_flip() + 
+        ylab("effect") + 
+        xlab("feature.value") 
+      if (!private$multiClass) {
+        original_prediction = self$predictor$predict(self$x.interest)[[1]]
+        p = p + ggtitle(sprintf("Actual prediction: %.2f\nLocalModel prediction: %.2f", 
+          original_prediction, self$predict()))
+      }
       if (private$multiClass) p = p + facet_wrap(".class")
       p
     },
