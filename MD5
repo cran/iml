@@ -1,4 +1,4 @@
-49c1f59636747e5d12432cd91ed7023c *DESCRIPTION
+b5f1ee1b8d55440d484636b102fe2d40 *DESCRIPTION
 3774111567697c54d486d4b8531d2502 *LICENSE
 7d4a291013b583c27a297a401e36c4d2 *NAMESPACE
 e687d8f41d4d3a11eec32ec5e0d2cc87 *NEWS.md
@@ -19,14 +19,14 @@ bd12d30653a402c5e306e9ef836bb0c5 *R/iml.R
 96b51f5e6846bc5d0053a5c651ce178b *R/inferTask.R
 4ba0f4c3d530e81297abf9419e3783c3 *R/list_rules_party.R
 ccb7f72d8a5c800b38dc72ee1e03cf1b *R/utils.R
-5d85bab4e9a8a8d03be4627fa9db3ff1 *build/vignette.rds
+5ee474a6cabe9e648c6f225fddc2252e *build/vignette.rds
 a47624e002370bb34a9c446a944f9e5d *inst/CITATION
 aaa37ac719fe38c1c1b4c807fc8ec556 *inst/doc/intro.R
 0f7ba873268a36f13b06c3303ecb5f29 *inst/doc/intro.Rmd
 31543b4ff8f9521dbff655d01d783641 *inst/doc/intro.html
 b82bb91d6222be5b71767b3f2582ae07 *inst/doc/parallel.R
-c391b7802c9a1448c8a35355b0a6e656 *inst/doc/parallel.Rmd
-caf6e9cdfac21a176316e1f7061e73ff *inst/doc/parallel.html
+e0018c398bd72eb0ec4170c80b34b9f9 *inst/doc/parallel.Rmd
+4582407bdadee7a26b02f7720c0fca04 *inst/doc/parallel.html
 c694c87ed438852a4310e4fe1ffe3daf *man/FeatureEffect.Rd
 7c1820ceb6d364f8b63187e8cde61fa1 *man/FeatureImp.Rd
 38b02ad34a537b9cebc0c497a52141ba *man/Interaction.Rd
@@ -51,7 +51,7 @@ a5ac1de62b00562faca8f3a416bf255d *man/plot.Shapley.Rd
 5dff2a00f298eb6b4d578cc160a821ba *man/predict.LocalModel.Rd
 e8952c201ddf78855d6be31582f5ec79 *man/predict.TreeSurrogate.Rd
 531df68b2fbc83421eadc2711ae4bc60 *tests/testthat.R
-e2eabf2b7cdd5c40306f16025f845cf5 *tests/testthat/Rplots.pdf
+57df1278001560d6c78718b39656b4b3 *tests/testthat/Rplots.pdf
 28e5c8d4380f738a4fb8a76625810f55 *tests/testthat/helper-predictor.R
 e309128ad2f3722146c3c69a5947e721 *tests/testthat/test-Data.R
 8cbde67d379d107c9caf1946458fd5af *tests/testthat/test-FeatureEffect.R
@@ -67,4 +67,4 @@ ac19d3152c64a824ceadb134c88afb2c *tests/testthat/test-Shapley.R
 756820da71ff43322ce3a14a9b4553b4 *tests/testthat/test-inferTask.R
 ece91d622e36ac7e128de878665d66c1 *tests/testthat/test-utils.R
 0f7ba873268a36f13b06c3303ecb5f29 *vignettes/intro.Rmd
-c391b7802c9a1448c8a35355b0a6e656 *vignettes/parallel.Rmd
+e0018c398bd72eb0ec4170c80b34b9f9 *vignettes/parallel.Rmd
