@@ -1,5 +1,5 @@
 ## ---- echo = FALSE, message = FALSE--------------------------------------
-knitr::opts_chunk$set(collapse = T, comment = "#>")
+knitr::opts_chunk$set(collapse = T, comment = "#>", fig.width = 7, fig.height = 7, fig.align = "center")
 options(tibble.print_min = 4L, tibble.print_max = 4L)
 
 ## ------------------------------------------------------------------------
@@ -7,7 +7,7 @@ set.seed(42)
 library("iml")
 library("randomForest")
 data("Boston", package  = "MASS")
-rf = randomForest(medv ~ ., data = Boston, ntree = 500)
+rf = randomForest(medv ~ ., data = Boston, ntree = 10)
 X = Boston[which(names(Boston) != "medv")]
 predictor = Predictor$new(rf, data = X, y = Boston$medv)
 
@@ -33,6 +33,10 @@ system.time(FeatureImp$new(predictor, loss = "mae", parallel = TRUE, n.repetitio
 ## ------------------------------------------------------------------------
 system.time(Interaction$new(predictor, parallel = FALSE))
 system.time(Interaction$new(predictor, parallel = TRUE))
+
+## ------------------------------------------------------------------------
+system.time(FeatureEffects$new(predictor, parallel = FALSE))
+system.time(FeatureEffects$new(predictor, parallel = TRUE))
 
 ## ------------------------------------------------------------------------
 stopCluster(cl)

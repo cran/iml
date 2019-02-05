@@ -6,7 +6,7 @@
 #' @name Interaction
 #' @section Usage:
 #' \preformatted{
-#' ia = Interaction$new(predictor, feature = NULL, grid.size = 20, run = TRUE)
+#' ia = Interaction$new(predictor, feature = NULL, grid.size = 20)
 #' 
 #' plot(ia)
 #' ia$results
@@ -26,7 +26,6 @@
 #' A larger grid.size means more accurate the results but longer the computation time.
 #' For each of the grid points, the partial dependence functions have to be computed, which involves marginalizing over all data points.}
 #' \item{parallel: }{`logical(1)`\cr Should the method be executed in parallel? If TRUE, requires a cluster to be registered, see ?foreach::foreach.}
-#' \item{run: }{(`logical(1)`)\cr Should the Interpretation method be run?}
 #' }
 #' 
 #' @section Details:  
@@ -54,7 +53,6 @@
 #' @section Methods:
 #' \describe{
 #' \item{plot()}{method to plot the feature interactions. See \link{plot.Interaction}.}
-#' \item{\code{run()}}{[internal] method to run the interpretability method. Use \code{obj$run(force = TRUE)} to force a rerun.}
 #' \item{\code{clone()}}{[internal] method to clone the R6 object.}
 #' \item{\code{initialize()}}{[internal] method to initialize the R6 object.}
 #' }
@@ -63,6 +61,7 @@
 #' Friedman, Jerome H., and Bogdan E. Popescu. "Predictive learning via rule ensembles." 
 #' The Annals of Applied Statistics 2.3 (2008): 916-954. 
 #' @examples
+#' \dontrun{
 #' if (require("rpart")) {
 #' set.seed(42)
 #' # Fit a CART on the Boston housing data set
@@ -81,7 +80,7 @@
 #' # Extract the results 
 #' dat = ia$results
 #' head(dat)
-#' \dontrun{
+#' 
 #' # Interaction also works with multiclass classification
 #' rf = rpart(Species ~ ., data = iris)
 #' mod = Predictor$new(rf, data = iris, type = "prob")
@@ -108,10 +107,9 @@ Interaction = R6::R6Class("Interaction",
   public = list(
     # The fitted tree
     grid.size = NULL,
-    initialize = function(predictor, feature = NULL, grid.size = 30, run = TRUE, parallel = FALSE) {
+    initialize = function(predictor, feature = NULL, grid.size = 30, parallel = FALSE) {
       assert_vector(feature, len = 1, null.ok = TRUE)
       assert_number(grid.size, lower = 2)
-      assert_logical(run)
       assert_logical(parallel)
       private$parallel = parallel
       if (!is.null(feature) && is.numeric(feature)) {
@@ -121,8 +119,10 @@ Interaction = R6::R6Class("Interaction",
       }
       self$grid.size = min(grid.size, predictor$data$n.rows)
       super$initialize(predictor)
-      if(run) self$run(predictor$batch.size)
-    },
+      private$run(predictor$batch.size)
+    } 
+  ), 
+  private = list(
     run = function(batch.size) {
       features = setdiff(private$sampler$feature.names, private$feature)
       data.sample = private$sampler$get.x()
@@ -136,9 +136,7 @@ Interaction = R6::R6Class("Interaction",
           grid.size = self$grid.size, 
           batch.size = batch.size, q = private$q, predictor = self$predictor)
       private$finished = TRUE
-    }
-  ), 
-  private = list(
+    },
     generatePlot = function(sort = TRUE, ...) {
       res = self$results
       if (sort & !private$multiClass) {
@@ -217,6 +215,7 @@ Interaction = R6::R6Class("Interaction",
 #' \link{Interaction}
 #' @examples
 #' # We train a tree on the Boston dataset:
+#' \dontrun{
 #' if (require("rpart")) {
 #' data("Boston", package  = "MASS")
 #' rf = rpart(medv ~ ., data = Boston)
@@ -227,6 +226,7 @@ Interaction = R6::R6Class("Interaction",
 #' 
 #' # Plot the results directly
 #' plot(ia)
+#' }
 #' }
 plot.Interaction = function(x, sort = TRUE) {
   x$plot(sort = sort)

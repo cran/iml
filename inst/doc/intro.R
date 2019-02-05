@@ -1,5 +1,5 @@
 ## ---- echo = FALSE, message = FALSE--------------------------------------
-knitr::opts_chunk$set(collapse = T, comment = "#>")
+knitr::opts_chunk$set(collapse = T, comment = "#>", fig.width = 7, fig.height = 7, fig.align = "center")
 options(tibble.print_min = 4L, tibble.print_max = 4L)
 
 ## ------------------------------------------------------------------------
@@ -37,6 +37,10 @@ plot(interact)
 ## ------------------------------------------------------------------------
 interact = Interaction$new(predictor, feature = "crim")
 plot(interact)
+
+## ------------------------------------------------------------------------
+effs = FeatureEffects$new(predictor)
+plot(effs)
 
 ## ------------------------------------------------------------------------
 tree = TreeSurrogate$new(predictor, maxdepth = 2)
