@@ -1,7 +1,7 @@
 Type: Package
 Package: iml
 Title: Interpretable Machine Learning
-Version: 0.10.0
+Version: 0.10.1
 Authors@R: 
     c(person(given = "Christoph",
              family = "Molnar",
@@ -18,7 +18,7 @@ Description: Interpretability methods to analyze the behavior
     are: Feature importance described by Fisher et al. (2018)
     <arXiv:1801.01489>, accumulated local effects plots described by Apley
     (2018) <arXiv:1612.08468>, partial dependence plots described by
-    Friedman (2001) <http://www.jstor.org/stable/2699986>, individual
+    Friedman (2001) <www.jstor.org/stable/2699986>, individual
     conditional expectation ('ice') plots described by Goldstein et al.
     (2013) <doi:10.1080/10618600.2014.907095>, local models (variant of
     'lime') described by Ribeiro et. al (2016) <arXiv:1602.04938>, the
@@ -26,20 +26,20 @@ Description: Interpretability methods to analyze the behavior
     <doi:10.1007/s10115-013-0679-x>, feature interactions described by
     Friedman et. al <doi:10.1214/07-AOAS148> and tree surrogate models.
 License: MIT + file LICENSE
-URL: https://github.com/christophM/iml
+URL: https://christophm.github.io/iml/,
+        https://github.com/christophM/iml/
 BugReports: https://github.com/christophM/iml/issues
 Imports: checkmate, data.table, Formula, future, future.apply, ggplot2,
-        gridExtra, Metrics, prediction, R6
+        keras (>= 2.2.5.0), Metrics, prediction, R6
 Suggests: ALEPlot, bench, caret, covr, e1071, future.callr, glmnet,
-        gower, h2o, keras, knitr, MASS, mlr, mlr3, party, partykit,
-        patchwork, randomForest, ranger, rmarkdown, rpart, testthat,
-        yaImpute
+        gower, h2o, knitr, MASS, mlr, mlr3, party, partykit, patchwork,
+        randomForest, ranger, rmarkdown, rpart, testthat, yaImpute
 VignetteBuilder: knitr
 Encoding: UTF-8
-RoxygenNote: 7.1.0
+RoxygenNote: 7.1.1
 NeedsCompilation: no
-Packaged: 2020-03-26 09:13:40 UTC; chris
+Packaged: 2020-09-24 09:23:35 UTC; chris
 Author: Christoph Molnar [aut, cre],
   Patrick Schratz [aut] (<https://orcid.org/0000-0003-0748-6624>)
 Repository: CRAN
-Date/Publication: 2020-03-26 10:20:03 UTC
+Date/Publication: 2020-09-24 12:30:14 UTC
