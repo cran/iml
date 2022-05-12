@@ -1,12 +1,10 @@
-context("Predictor")
-
 test_that("equivalence", {
-  expect_equivalent(prediction.f, predictor.caret$predict(iris.test))
-  expect_equivalent(
+  expect_equal(ignore_attr = TRUE, prediction.f, predictor.caret$predict(iris.test))
+  expect_equal(ignore_attr = TRUE, 
     predictor.mlr$predict(iris.test),
     predictor.S3$predict(iris.test)
   )
-  expect_equivalent(
+  expect_equal(ignore_attr = TRUE, 
     predictor.mlr3$predict(iris.test),
     predictor.S3$predict(iris.test)
   )
@@ -33,18 +31,21 @@ test_that("extracts y automatically for randomForest", {
 
 test_that("extracts y automatically for H2OMultinomialModel", {
   skip_on_os("windows")
+  skip_on_os("mac")
   skip_on_cran()
   expect_equal(predictor.h2o.class$data$y.names, "Species")
 })
 
 test_that("extracts y automatically for H2OBinomialModel", {
   skip_on_os("windows")
+  skip_on_os("mac")
   skip_on_cran()
   expect_equal(predictor.h2o.class2$data$y.names, "Species")
 })
 
 test_that("extracts y automatically for H2ORegressionModel", {
   skip_on_os("windows")
+  skip_on_os("mac")
   skip_on_cran()
   expect_equal(predictor.h2o.regr$data$y.names, "Sepal.Width")
 })
@@ -67,6 +68,7 @@ test_that("errors when trying to extract data from for mlr3::Learner", {
 
 test_that("h20 prediction works", {
   skip_on_os("windows")
+  skip_on_os("mac")
   skip_on_cran()
   expect_equal(
     predictor.h2o.class$predict(iris),
@@ -85,6 +87,7 @@ test_that("h20 prediction works", {
 
 test_that("Keras classification predictions work without prob", {
   skip_on_os("windows")
+  skip_on_os("mac")
   skip_on_cran()
   expect_equal(
     predictor.keras1$predict(newdata = iris.test),
@@ -95,6 +98,7 @@ test_that("Keras classification predictions work without prob", {
 
 test_that("Keras classification predictions work with prob", {
   skip_on_os("windows")
+  skip_on_os("mac")
   skip_on_cran()
   expect_equal(
     predictor.keras1.prob$predict(newdata = iris.test),
@@ -105,6 +109,7 @@ test_that("Keras classification predictions work with prob", {
 
 test_that("Keras classification can get nice column names through custom predict funs", {
   skip_on_os("windows")
+  skip_on_os("mac")
   skip_on_cran()
 
   expect_equal(
@@ -141,12 +146,12 @@ predictor.f <- Predictor$new(predict.fun = mod.f, class = 2, data = iris)
 prediction.f <- predictor.f$predict(iris.test)
 
 test_that("equivalence", {
-  expect_equivalent(prediction.f, predictor.caret$predict(iris.test))
-  expect_equivalent(
+  expect_equal(ignore_attr = TRUE, prediction.f, predictor.caret$predict(iris.test))
+  expect_equal(ignore_attr = TRUE, 
     predictor.mlr$predict(iris.test),
     predictor.S3$predict(iris.test)
   )
-  expect_equivalent(
+  expect_equal(ignore_attr = TRUE, 
     predictor.mlr3$predict(iris.test),
     predictor.S3$predict(iris.test)
   )
@@ -194,15 +199,15 @@ prediction.f <- predictor.f$predict(boston.test)
 
 
 test_that("equivalence", {
-  expect_equivalent(
+  expect_equal(ignore_attr = TRUE, 
     prediction.f,
     predictor.caret$predict(boston.test)
   )
-  expect_equivalent(
+  expect_equal(ignore_attr = TRUE, 
     predictor.mlr$predict(boston.test),
     predictor.S3$predict(boston.test)
   )
-  expect_equivalent(
+  expect_equal(ignore_attr = TRUE, 
     predictor.mlr3$predict(boston.test),
     predictor.S3$predict(boston.test)
   )
@@ -275,6 +280,7 @@ test_that("Predictor keeps factor names without X", {
 
 test_that("Keras regression predictions work", {
   skip_on_os("windows")
+  skip_on_os("mac")
   skip_on_cran()
   expect_equal(
     predictor.keras2$predict(newdata = boston.test[, 1:13]),

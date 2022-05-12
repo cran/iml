@@ -42,8 +42,8 @@ For individual conditional expectation:
 \examples{
 # We train a random forest on the Boston dataset:
 data("Boston", package = "MASS")
-library("randomForest")
-rf <- randomForest(medv ~ ., data = Boston, ntree = 50)
+library("rpart")
+rf <- rpart(medv ~ ., data = Boston)
 mod <- Predictor$new(rf, data = Boston)
 
 # Compute the accumulated local effects for the first feature
@@ -95,7 +95,7 @@ eff <- FeatureEffect$new(mod, feature = c("crim", "lstat"))
 plot(eff)
 
 # FeatureEffect plots also works with multiclass classification
-rf <- randomForest(Species ~ ., data = iris, ntree = 50)
+rf <- rpart(Species ~ ., data = iris)
 mod <- Predictor$new(rf, data = iris, type = "prob")
 
 # For some models we have to specify additional arguments for the predict
@@ -188,7 +188,8 @@ Create a FeatureEffect object
   feature,
   method = "ale",
   center.at = NULL,
-  grid.size = 20
+  grid.size = 20,
+  grid.points = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -218,6 +219,12 @@ features.}
 
 \item{\code{grid.size}}{(\code{numeric(1)} | \code{numeric(2)})\cr
 The size of the grid for evaluating the predictions.}
+
+\item{\code{grid.points}}{(\code{numeric()} | \verb{list(numeric()}, \code{numeric()})\cr
+An optional grid along the feature. If grid.points are set, the grid.size
+argument is ignored. Provide a list of two vectors with the same order as
+in the 'feature' argument, if PDP/ALE for two features is to be computed
+with a user-defined grid.}
 }
 \if{html}{\out{</div>}}
 }
