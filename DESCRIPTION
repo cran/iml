@@ -1,7 +1,7 @@
 Type: Package
 Package: iml
 Title: Interpretable Machine Learning
-Version: 0.11.0
+Version: 0.11.1
 Authors@R: c(
     person("Christoph", "Molnar", , "christoph.molnar@gmail.com", role = c("aut", "cre")),
     person("Patrick", "Schratz", , "patrick.schratz@gmail.com", role = "aut",
@@ -34,10 +34,10 @@ VignetteBuilder: knitr
 Config/testthat/edition: 3
 Config/testthat/parallel: true
 Encoding: UTF-8
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.1
 NeedsCompilation: no
-Packaged: 2022-05-12 19:38:20 UTC; pjs
+Packaged: 2022-09-08 08:50:32 UTC; chris
 Author: Christoph Molnar [aut, cre],
   Patrick Schratz [aut] (<https://orcid.org/0000-0003-0748-6624>)
 Repository: CRAN
-Date/Publication: 2022-05-12 21:10:02 UTC
+Date/Publication: 2022-09-08 09:52:58 UTC

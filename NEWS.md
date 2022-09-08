@@ -1,5 +1,15 @@
 <!-- NEWS.md is maintained by https://cynkra.github.io/fledge, do not edit -->
 
+# iml 0.11.1
+
+- Update documentation to conform to CRAN HTML5
+
+
+# iml 0.11.0.9000
+
+- Same as previous version.
+
+
 # iml 0.11.0
 
 - Fix possible future issue with `data.table::melt()` (#182)
