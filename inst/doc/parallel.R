@@ -1,4 +1,4 @@
-## ---- echo = FALSE, message = FALSE-------------------------------------------
+## ----echo = FALSE, message = FALSE--------------------------------------------
 knitr::opts_chunk$set(collapse = T, comment = "#>", fig.width = 7, fig.height = 7, fig.align = "center")
 options(tibble.print_min = 4L, tibble.print_max = 4L)
 
@@ -35,22 +35,22 @@ bench::system_time({
 ## -----------------------------------------------------------------------------
 bench::system_time({
   plan(sequential)
-  FeatureImp$new(predictor, loss = "mae", n.repetitions = 20)
+  FeatureImp$new(predictor, loss = "mae", n.repetitions = 10)
 })
 
 bench::system_time({
   plan("callr", workers = 2)
-  FeatureImp$new(predictor, loss = "mae", n.repetitions = 20)
+  FeatureImp$new(predictor, loss = "mae", n.repetitions = 10)
 })
 
 ## -----------------------------------------------------------------------------
 bench::system_time({
   plan(sequential)
-  Interaction$new(predictor)
+  Interaction$new(predictor, grid.size = 15)
 })
 bench::system_time({
   plan("callr", workers = 2)
-  Interaction$new(predictor)
+  Interaction$new(predictor, grid.size = 15)
 })
 
 ## -----------------------------------------------------------------------------

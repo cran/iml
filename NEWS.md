@@ -1,13 +1,17 @@
 <!-- NEWS.md is maintained by https://cynkra.github.io/fledge, do not edit -->
 
+# iml 0.11.2
+
+- Replaced `prediction::find_data` function with self-written one
+
+# iml 0.11.1.9000
+
+- Internal changes only.
+
+
 # iml 0.11.1
 
 - Update documentation to conform to CRAN HTML5
-
-
-# iml 0.11.0.9000
-
-- Same as previous version.
 
 
 # iml 0.11.0
@@ -87,7 +91,7 @@
 - Removed losses: f1, logLoss, rmse, mdae, rae, rmse, rmsle, rse, rrse
   f1 because the implementation used didn't make sense anyways
 - Interaction: The results return as interaction strength now the H-statistic instead of the H-squared-statistic.
-  This makes it more coherent with the gbm pacakge and the interact.gbm function and with what Friedman uses in the plots in the paper.
+  This makes it more coherent with the gbm package and the interact.gbm function and with what Friedman uses in the plots in the paper.
   For users of the package this means that an interaction of strength x becomes an interaction of strength sqrt(x).
 - `Interaction`, `FeatureImp` and `Partial` are now computed batch-wise in the background. This prevents this methods from overloading the memory. For that, the `Predictor` has a new init argument 'batch.size' which limits the number of rows send to the model for prediction for the methods `Interaction`, `FeatureImp` and `Partial`.
 - `Interaction` and `FeatureImp` additionally allow parallel computation on multiple cores. See `vignette("parallel", package = "iml")` for how to use it.
