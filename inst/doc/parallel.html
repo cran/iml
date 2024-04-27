@@ -388,13 +388,13 @@ get by parallelization.</p>
 <span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt; Warning: Paket &#39;survival&#39; wurde unter R Version 4.3.2 erstellt</span></span>
 <span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt; Warning: Paket &#39;Rcpp&#39; wurde unter R Version 4.3.2 erstellt</span></span>
 <span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co">#&gt; process    real </span></span>
-<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="co">#&gt;   1.44s   3.17s</span></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="co">#&gt;   1.94s   3.31s</span></span>
 <span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a>bench<span class="sc">::</span><span class="fu">system_time</span>({</span>
 <span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a>  <span class="fu">plan</span>(<span class="st">&quot;callr&quot;</span>, <span class="at">workers =</span> <span class="dv">2</span>)</span>
 <span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a>  FeatureImp<span class="sc">$</span><span class="fu">new</span>(predictor, <span class="at">loss =</span> <span class="st">&quot;mae&quot;</span>)</span>
 <span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a>})</span>
-<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a><span class="co">#&gt;  process     real </span></span>
-<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a><span class="co">#&gt; 234.38ms    5.97s</span></span></code></pre></div>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a><span class="co">#&gt; process    real </span></span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a><span class="co">#&gt;   125ms   6.78s</span></span></code></pre></div>
 <p>A little bit of improvement, but not too impressive. Parallelization
 is more useful in the case where the model uses a lot of features or
 where the feature importance computation is repeated more often to get
@@ -404,14 +404,14 @@ more stable results.</p>
 <span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  FeatureImp<span class="sc">$</span><span class="fu">new</span>(predictor, <span class="at">loss =</span> <span class="st">&quot;mae&quot;</span>, <span class="at">n.repetitions =</span> <span class="dv">10</span>)</span>
 <span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>})</span>
 <span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt; process    real </span></span>
-<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt;   2.31s   4.66s</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt;   2.94s   5.49s</span></span>
 <span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a></span>
 <span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>bench<span class="sc">::</span><span class="fu">system_time</span>({</span>
 <span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>  <span class="fu">plan</span>(<span class="st">&quot;callr&quot;</span>, <span class="at">workers =</span> <span class="dv">2</span>)</span>
 <span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a>  FeatureImp<span class="sc">$</span><span class="fu">new</span>(predictor, <span class="at">loss =</span> <span class="st">&quot;mae&quot;</span>, <span class="at">n.repetitions =</span> <span class="dv">10</span>)</span>
 <span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a>})</span>
 <span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co">#&gt;  process     real </span></span>
-<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt; 156.25ms    7.28s</span></span></code></pre></div>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt; 296.88ms    6.79s</span></span></code></pre></div>
 <div id="interaction" class="section level3">
 <h3>Interaction</h3>
 <p>Here the parallel computation is twice as fast as the sequential
@@ -423,13 +423,13 @@ statistics:</p>
 <span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  Interaction<span class="sc">$</span><span class="fu">new</span>(predictor, <span class="at">grid.size =</span> <span class="dv">15</span>)</span>
 <span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>})</span>
 <span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; process    real </span></span>
-<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt;   4.58s    7.6s</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt;   5.22s    7.8s</span></span>
 <span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>bench<span class="sc">::</span><span class="fu">system_time</span>({</span>
 <span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>  <span class="fu">plan</span>(<span class="st">&quot;callr&quot;</span>, <span class="at">workers =</span> <span class="dv">2</span>)</span>
 <span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>  Interaction<span class="sc">$</span><span class="fu">new</span>(predictor, <span class="at">grid.size =</span> <span class="dv">15</span>)</span>
 <span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a>})</span>
 <span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt;  process     real </span></span>
-<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt; 265.62ms    9.25s</span></span></code></pre></div>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt; 265.62ms    9.47s</span></span></code></pre></div>
 </div>
 <div id="feature-effects" class="section level3">
 <h3>Feature Effects</h3>
@@ -439,13 +439,13 @@ statistics:</p>
 <span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  FeatureEffects<span class="sc">$</span><span class="fu">new</span>(predictor)</span>
 <span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>})</span>
 <span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt;  process     real </span></span>
-<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt; 718.75ms    1.15s</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt; 765.62ms    1.25s</span></span>
 <span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>bench<span class="sc">::</span><span class="fu">system_time</span>({</span>
 <span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>  <span class="fu">plan</span>(<span class="st">&quot;callr&quot;</span>, <span class="at">workers =</span> <span class="dv">2</span>)</span>
 <span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>  FeatureEffects<span class="sc">$</span><span class="fu">new</span>(predictor)</span>
 <span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>})</span>
-<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt; process    real </span></span>
-<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt; 437.5ms   7.96s</span></span></code></pre></div>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt;  process     real </span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt; 984.38ms    9.65s</span></span></code></pre></div>
 </div>
 </div>
 
